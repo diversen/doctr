@@ -2,8 +2,8 @@ import json
 import logging
 import os
 import random
-import uuid
 import time
+import uuid
 
 from trdg.generators import GeneratorFromStrings
 
@@ -96,11 +96,11 @@ def generate_word(word, labels_dict, output_dir_images):
         break
 
 
-def random_num_words(word, num_words, output_dir="images_output"):
+def generate_images_from_word(word, num_words, output_dir="images_output"):
     """
     Generate images for a single word
     """
-    logging.debug(f"Generating {num_words} images for {word}.")
+    logging.info(f"Generating {num_words} images for {word}.")
     output_dir_images = os.path.join(output_dir, "images")
     os.makedirs(output_dir_images, exist_ok=True)
     labels_file = os.path.join(output_dir, "labels.json")
@@ -108,7 +108,7 @@ def random_num_words(word, num_words, output_dir="images_output"):
     if os.path.exists(labels_file):
         with open(labels_file, "r", encoding="utf-8") as f:
             labels_dict = json.load(f)
-            logging.debug(f"Loaded {labels_file}")
+            logging.info(f"Loaded {labels_file}")
     else:
         labels_dict = {}
 
@@ -121,5 +121,5 @@ def random_num_words(word, num_words, output_dir="images_output"):
         json.dump(labels_dict, f, ensure_ascii=False, indent=4)
 
     end = time.time()
-    logging.debug(f"Saved {labels_file}. Generated {num_words} images for {word}.")
-    logging.debug(f"Time taken: {end - start:.2f} seconds.")
+    logging.info(f"Saved {labels_file}. Generated {num_words} images for {word}.")
+    logging.info(f"Time taken: {end - start:.2f} seconds.")

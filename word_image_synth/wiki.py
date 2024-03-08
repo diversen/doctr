@@ -41,7 +41,7 @@ def get_random_words(lang="da", vocab=None):
     return words
 
 
-def generate_num_words(json_file, max_words, vocab):
+def generate_word_list(json_file, max_words, vocab):
     """
     Generate a number of words from Wikipedia
     and saving them to a json file
@@ -62,8 +62,6 @@ def generate_num_words(json_file, max_words, vocab):
         with open(json_file, "w", encoding="utf-8") as f:
             # only save unique words
             words = list(set(words))
-
-            # Sort 
             words.sort()
             json.dump(words, f, ensure_ascii=False, indent=4)
 

@@ -67,7 +67,7 @@ pyphen==0.14.0
 pyproject-toml==0.0.10
 python-bidi==0.4.2
 python-dateutil==2.9.0.post0
--e git+ssh://git@github.com/diversen/doctr.git@f941ea608b84935ea4bb26eb3e36b37b63f231bf#egg=python_doctr
+-e git+ssh://git@github.com/diversen/doctr.git@3c83d20b02df7cd7f777ee92a659f022163b7d33#egg=python_doctr
 PyYAML==6.0.1
 rapidfuzz==3.6.2
 referencing==0.33.0

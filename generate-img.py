@@ -23,11 +23,17 @@ parser.add_argument(
 # word list
 parser.add_argument("--word-list", type=str, default="words.json", help="Word list")
 
+# begin word in case of resuming from a word
+parser.add_argument(
+    "--begin-word", type=str, default=None, help="Begin word in case of resuming"
+)
+
 # get all args
 args = parser.parse_args()
 num_words = args.num_words
 output_dir = args.output_dir
 word_list = args.word_list
+begin_word = args.begin_word
 
 # from word_image_synth.generate import random_num_words  # noqa: E402
 vocab = VOCABS["multilingual"]
@@ -39,5 +45,11 @@ with open(word_list, "r", encoding="utf-8") as f:
     words = json.load(f)
 
 for word in words:
+
+    if begin_word and word != begin_word:
+        continue
+
+    begin_word = None
+
     logging.debug(f"Generating images for {word}")
-    generate_images_from_word(word, 20, output_dir)
+    generate_images_from_word(word=word, num_words=20, output_dir=output_dir)

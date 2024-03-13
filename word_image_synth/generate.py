@@ -96,11 +96,11 @@ def generate_word(word, labels_dict, output_dir_images):
         break
 
 
-def generate_images_from_word(word, num_words, output_dir="images_output"):
+def generate_images_from_word(word, num_images, output_dir="images_output"):
     """
     Generate images for a single word
     """
-    logging.info(f"Generating {num_words} images for {word}.")
+    logging.info(f"Generating {num_images} images for {word}.")
     output_dir_images = os.path.join(output_dir, "images")
     os.makedirs(output_dir_images, exist_ok=True)
     labels_file = os.path.join(output_dir, "labels.json")
@@ -113,7 +113,7 @@ def generate_images_from_word(word, num_words, output_dir="images_output"):
         labels_dict = {}
 
     start = time.time()
-    for _ in range(num_words):
+    for _ in range(num_images):
         generate_word(word, labels_dict, output_dir_images)
 
     # save labels_dict to labels_file
@@ -121,5 +121,62 @@ def generate_images_from_word(word, num_words, output_dir="images_output"):
         json.dump(labels_dict, f, ensure_ascii=False, indent=4)
 
     end = time.time()
-    logging.info(f"Saved {labels_file}. Generated {num_words} images for {word}.")
+    logging.info(f"Saved {labels_file}. Generated {num_images} images for {word}.")
     logging.info(f"Time taken: {end - start:.2f} seconds.")
+
+
+def generate_labels_max_chars(labels_file, max_chars):
+    """
+    Generate labels for a max number of chars
+    """
+    with open(labels_file, "r", encoding="utf-8") as f:
+        labels_dict = json.load(f)
+
+    # size of labels before max chars
+    logging.info(f"Size of labels before max chars: {len(labels_dict)}")
+
+    labels_max_chars = {}
+    for key, value in labels_dict.items():
+        if len(value) <= max_chars:
+            labels_max_chars[key] = value
+
+    labels_max_chars_file = labels_file.replace(".json", f"_max_chars_{max_chars}.json")
+    with open(labels_max_chars_file, "w", encoding="utf-8") as f:
+        json.dump(labels_max_chars, f, ensure_ascii=False, indent=4)
+
+    # print size of labels
+    logging.info(f"Size of labels: {len(labels_max_chars)}")
+
+    logging.info(f"Saved {labels_max_chars_file}.")
+    return labels_max_chars_file
+
+
+def generate_subset_labels(labels_file, max_labels):
+    """
+    Generate a subset of labels
+    """
+    with open(labels_file, "r", encoding="utf-8") as f:
+        labels_dict = json.load(f)
+
+    # size of labels before max chars
+    logging.info(f"Size of labels before max labels: {len(labels_dict)}")
+
+    # randomize labels
+    labels_keys = list(labels_dict.keys())
+    random.shuffle(labels_keys)
+
+    # Correctly utilizing shuffled labels_keys
+    labels_subset = {}
+    for key in labels_keys[:max_labels]:
+        print(labels_dict[key])
+        labels_subset[key] = labels_dict[key]
+
+    labels_subset_file = labels_file.replace(".json", f"_subset_{max_labels}.json")
+    with open(labels_subset_file, "w", encoding="utf-8") as f:
+        json.dump(labels_subset, f, ensure_ascii=False, indent=4)
+
+    # print size of labels
+    logging.info(f"Size of labels: {len(labels_subset)}")
+
+    logging.info(f"Saved {labels_subset_file}.")
+    return labels_subset_file

@@ -36,8 +36,6 @@ def get_random_words(lang="da", vocab=None):
     # remove empty words
     words = [word for word in words if word]
 
-
-
     return words
 
 

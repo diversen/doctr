@@ -27,9 +27,13 @@ python references/recognition/train_pytorch.py crnn_vgg16_bn --max-chars 32 --vo
 
 # Train status
 
-Validation loss: 0.0599899 (Exact: 91.91% | Partial: 93.28%)
-Validation loss: 0.047381 (Exact: 93.61% | Partial: 94.75%)
-Validation loss: 0.0422745 (Exact: 94.42% | Partial: 95.43%) 
+Epoch 1/1 - Validation loss: 0.0533324 (Exact: 93.36% | Partial: 93.94%)
+
+Epoch 1/1 - Validation loss: 0.04798 (Exact: 93.96% | Partial: 94.50%) 
+
+Epoch 1/2 - Validation loss: 0.0462669 (Exact: 94.01% | Partial: 94.62%) 
+Epoch 2/2 - Validation loss: 0.0425779 (Exact: 94.57% | Partial: 95.05%)
+
 
 # Hacking
 

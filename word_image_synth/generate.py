@@ -127,7 +127,7 @@ def generate_images_from_word(word, num_images, output_dir="images_output"):
     logging.info(f"Time taken: {end - start:.2f} seconds.")
 
 
-def set_labels(labels_file, max_chars, vocab=None):
+def set_labels(labels_file, max_chars, max_labels=None, vocab=None, vocab_required=None):
     """
     Generate labels for a max number of chars
     """
@@ -137,27 +137,40 @@ def set_labels(labels_file, max_chars, vocab=None):
     # size of labels before max chars
     logging.info(f"Size of labels before max chars: {len(labels_dict)}")
 
-    labels_max_chars = {}
+    filtered_labels = {}
     for key, value in labels_dict.items():
 
-        # continue if value has chars that are not in vocab
         if vocab:
             vocab_chars = VOCABS[vocab]
+
+            # continue if value has chars that are not in vocab
             if not all(char in vocab_chars for char in value):
                 continue
 
-        if len(value) <= max_chars:
-            labels_max_chars[key] = value
+            if vocab_required:
 
-    labels_max_chars_file = labels_file.replace(".json", f"_max_chars_{max_chars}.json")
-    with open(labels_max_chars_file, "w", encoding="utf-8") as f:
-        json.dump(labels_max_chars, f, ensure_ascii=False, indent=4)
+                # if there is not a single char in value that is in vocab_chars then continue
+                if not any(char in vocab_required for char in value):
+                    continue
+
+        if len(value) <= max_chars:
+            filtered_labels[key] = value
+
+    if max_labels:
+        # random select max_labels from labels_max_chars
+        filtered_labels = dict(random.sample(filtered_labels.items(), max_labels))
+
+    # get path from labels_file
+    labels_path = os.path.dirname(labels_file)
+
+    # labels_max_chars_file = labels_file.replace(".json", f"_filtered.json.backup")
+    labels_filtered_file = labels_path + "/labels_filtered.json"
+    with open(labels_filtered_file, "w", encoding="utf-8") as f:
+        json.dump(filtered_labels, f, ensure_ascii=False, indent=4)
 
     # print size of labels
-    logging.info(f"Size of labels: {len(labels_max_chars)}")
-
-    logging.info(f"Saved {labels_max_chars_file}.")
-    return labels_max_chars_file
+    logging.info(f"Size of labels: {len(filtered_labels)}")
+    logging.info(f"Saved {labels_filtered_file}.")
 
 
 def generate_subset_labels(labels_file, max_labels):

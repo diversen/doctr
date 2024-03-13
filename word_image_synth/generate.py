@@ -7,6 +7,8 @@ import uuid
 
 from trdg.generators import GeneratorFromStrings
 
+from doctr.datasets import VOCABS
+
 
 # find all .ttf files in /usr/share/fonts
 def get_fonts():
@@ -125,7 +127,7 @@ def generate_images_from_word(word, num_images, output_dir="images_output"):
     logging.info(f"Time taken: {end - start:.2f} seconds.")
 
 
-def generate_labels_max_chars(labels_file, max_chars):
+def set_labels(labels_file, max_chars, vocab=None):
     """
     Generate labels for a max number of chars
     """
@@ -137,6 +139,13 @@ def generate_labels_max_chars(labels_file, max_chars):
 
     labels_max_chars = {}
     for key, value in labels_dict.items():
+
+        # continue if value has chars that are not in vocab
+        if vocab:
+            vocab_chars = VOCABS[vocab]
+            if not all(char in vocab_chars for char in value):
+                continue
+
         if len(value) <= max_chars:
             labels_max_chars[key] = value
 

@@ -43,7 +43,7 @@ VOCABS["czech"] = VOCABS["english"] + "áčďéěíňóřšťúůýžÁČĎÉĚ�
 VOCABS["polish"] = VOCABS["english"] + "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ"
 VOCABS["dutch"] = VOCABS["english"] + "áéíóúüñÁÉÍÓÚÜÑ"
 VOCABS["norwegian"] = VOCABS["english"] + "æøåÆØÅ"
-VOCABS["danish"] = VOCABS["english"] + "æøåÆØÅ"
+VOCABS["danish"] = VOCABS["english"] + "éæøåÉÆØÅ"
 VOCABS["finnish"] = VOCABS["english"] + "äöÄÖ"
 VOCABS["swedish"] = VOCABS["english"] + "åäöÅÄÖ"
 VOCABS["vietnamese"] = (

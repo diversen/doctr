@@ -173,7 +173,7 @@ def set_labels(labels_file, max_chars, max_labels=None, vocab=None, vocab_requir
     logging.info(f"Saved {labels_filtered_file}.")
 
 
-def generate_subset_labels(labels_file, max_labels):
+def generate_subset_labels(labels_file, max_chars, max_labels, vocab):
     """
     Generate a subset of labels
     """
@@ -183,6 +183,18 @@ def generate_subset_labels(labels_file, max_labels):
     # size of labels before max chars
     logging.info(f"Size of labels before max labels: {len(labels_dict)}")
 
+    vocab_chars = VOCABS[vocab]
+
+    # remove labels that are not in vocab
+    labels_dict = {key: value for key, value in labels_dict.items() if all(char in vocab_chars for char in value)}
+
+    # remove labels that are greater than max_chars
+    labels_dict = {key: value for key, value in labels_dict.items() if len(value) <= max_chars}
+
+    # continue if value has chars that are not in vocab
+    # if not all(char in vocab_chars for char in value):
+    #     continue
+
     # randomize labels
     labels_keys = list(labels_dict.keys())
     random.shuffle(labels_keys)
@@ -190,7 +202,6 @@ def generate_subset_labels(labels_file, max_labels):
     # Correctly utilizing shuffled labels_keys
     labels_subset = {}
     for key in labels_keys[:max_labels]:
-        print(labels_dict[key])
         labels_subset[key] = labels_dict[key]
 
     labels_subset_file = labels_file.replace(".json", f"_subset_{max_labels}.json")

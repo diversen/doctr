@@ -4,11 +4,30 @@ import os
 import random
 import time
 import uuid
+import gc
 
 from multiprocessing import Pool
 from multiprocessing import Manager
 from trdg.generators import GeneratorFromStrings
 from doctr.datasets import VOCABS
+
+
+import os
+import json
+import tempfile
+
+def save_labels(data, target_file_path):
+
+    data = dict(data)  # Convert to standard dict
+
+    # Create a temporary file in the same directory as the target file
+    dir_name = os.path.dirname(target_file_path)
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False, dir=dir_name) as tmp_file:
+        json.dump(data, tmp_file, ensure_ascii=False, indent=4)
+        temp_file_path = tmp_file.name
+
+    # Atomically rename the temporary file to the target file
+    os.rename(temp_file_path, target_file_path)
 
 
 # find all .ttf files in /usr/share/fonts
@@ -99,52 +118,64 @@ def generate_word(word, labels_dict, output_dir_images):
         break
 
 
-def worker(args):
-    word, labels_dict, output_dir_images = args
-    # Assuming generate_word is a function you've defined to generate an image
-    generate_word(word, labels_dict, output_dir_images)
+def generate_images_for_batch(words, output_dir_images, labels_dict, num_images_per_word):
+    args = [(word, labels_dict, output_dir_images, num_images_per_word) for word in words]
+    
+    with Pool() as pool:
+        pool.starmap(worker, args) 
+
+def worker(word, labels_dict, output_dir_images, num_images_per_word):
+    for _ in range(num_images_per_word):
+        generate_word(word, labels_dict, output_dir_images)
 
 
 
-def generate_images_from_word(word, num_images=20, output_dir="images_output"):
-    """
-    Generate images for a single word using multiprocessing.
-    """
-    logging.info(f"Generating {num_images} images for {word}.")
+def generate_images_from_words(words, begin_word, num_images_per_word, output_dir, batch_size=10):
     output_dir_images = os.path.join(output_dir, "images")
     os.makedirs(output_dir_images, exist_ok=True)
     labels_file = os.path.join(output_dir, "labels.json")
 
-    # Initialize a Manager and create a managed dictionary
-    with Manager() as manager:
-        labels_dict = manager.dict()
+    manager = Manager()
+    labels_dict = manager.dict()  # Create a managed dictionary
 
-        # Load or initialize labels dictionary
-        if os.path.exists(labels_file):
-            with open(labels_file, "r", encoding="utf-8") as f:
-                temp_dict = json.load(f)
-            labels_dict.update(temp_dict)
-            logging.info(f"Loaded {labels_file}")
+    
+    with open(labels_file, "r") as f:
+        initial_labels = json.load(f)
+        labels_dict.update(initial_labels)
 
-        # Prepare arguments for the worker function, note that labels_dict is now a managed dict
-        args = [(word, labels_dict, output_dir_images) for _ in range(num_images)]
+    processing_started = False if begin_word else True
+    words_processed = 0
 
-        # Use multiprocessing.Pool to parallelize the image generation
-        with Pool() as pool:
-            pool.map(worker, args)
+    # get start time
+    start_time = time.time()
 
-        start = time.time()
+    for i, word in enumerate(words):
+        if not processing_started:
+            if word == begin_word:
+                processing_started = True
+            else:
+                continue
 
-        # After all processes complete, convert the managed dictionary back to a regular dict for saving
-        regular_labels_dict = dict(labels_dict)
+        if (i % batch_size == 0 and i != 0) or (word == words[-1]):
+            # Save after processing each batch or on the last word
+            save_labels(labels_dict, labels_file)
+            logging.info(f"Batch processed and saved. Total words processed: {words_processed}")
 
-    # Save labels_dict to labels_file
-    with open(labels_file, "w", encoding="utf-8") as f:
-        json.dump(regular_labels_dict, f, ensure_ascii=False, indent=4)
+            # log time taken
+            time_taken = time.time() - start_time
+            logging.info(f"Time taken: {time_taken} seconds")
 
-    end = time.time()
-    logging.info(f"Saved {labels_file}. Generated {num_images} images for {word}.")
-    logging.info(f"Time taken: {end - start:.2f} seconds.")
+            # reset start time
+            start_time = time.time()
+
+        # Process the current word
+        logging.info(f"Generating images for word: {word}")
+        generate_images_for_batch([word], output_dir_images, labels_dict, num_images_per_word)
+        words_processed += 1
+
+    # Save any remaining changes after loop ends
+    save_labels(labels_dict, labels_file)
+    logging.info(f"Finished processing. Total words processed: {words_processed}")
 
 
 def set_labels(labels_file, max_chars, max_labels=None, vocab=None, vocab_required=None):

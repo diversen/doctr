@@ -48,6 +48,10 @@ async def get_random_words(session, lang="da", vocab=None):
         words = [word for word in words if all(char in vocab_ for char in word)]
 
     words = [word for word in words if word]
+
+    # remove words over 32 chars
+    words = [word for word in words if len(word) <= 32]
+
     return words
 
 async def generate_word_list(json_file, max_words, vocab, lang, concurrent_requests=5, save_every_n_tasks=5):

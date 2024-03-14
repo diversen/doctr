@@ -1,8 +1,19 @@
+# Install
+
+    sudo apt-get install -y libpangocairo-1.0-0
+
+    git clone https://github.com/mindee/doctr
+    cd doctr
+    virtualenv venv
+
+    pip install -r requirements-trdg.txt
+    pip install -r references/requirements.txt
+
 # generate synth images 
 
 Will output training data to /home/dennis/d/validation. It will first generate at least 10 random words from wikipedia and then generate images for each word. The images will be stored in /home/dennis/d/train. The number of images of each word is controlled by the --num-images-per-word flag.
 
-    python generate-img.py --num-words 10 --num-images-per-word 1 --output-dir /home/dennis/d/generate-test --word-list ~/d/words-test.json 
+    python generate-img.py --num-words 250000 --num-images-per-word 1 --output-dir /home/dennis/d/generate-test --word-list train-words.json --vocab danish --lang da
 
 # train danish from scratch
 

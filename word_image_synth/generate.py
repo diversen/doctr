@@ -5,8 +5,9 @@ import random
 import time
 import uuid
 
+from multiprocessing import Pool
+from multiprocessing import Manager
 from trdg.generators import GeneratorFromStrings
-
 from doctr.datasets import VOCABS
 
 
@@ -98,29 +99,48 @@ def generate_word(word, labels_dict, output_dir_images):
         break
 
 
-def generate_images_from_word(word, num_images, output_dir="images_output"):
+def worker(args):
+    word, labels_dict, output_dir_images = args
+    # Assuming generate_word is a function you've defined to generate an image
+    generate_word(word, labels_dict, output_dir_images)
+
+
+
+def generate_images_from_word(word, num_images=20, output_dir="images_output"):
     """
-    Generate images for a single word
+    Generate images for a single word using multiprocessing.
     """
     logging.info(f"Generating {num_images} images for {word}.")
     output_dir_images = os.path.join(output_dir, "images")
     os.makedirs(output_dir_images, exist_ok=True)
     labels_file = os.path.join(output_dir, "labels.json")
 
-    if os.path.exists(labels_file):
-        with open(labels_file, "r", encoding="utf-8") as f:
-            labels_dict = json.load(f)
+    # Initialize a Manager and create a managed dictionary
+    with Manager() as manager:
+        labels_dict = manager.dict()
+
+        # Load or initialize labels dictionary
+        if os.path.exists(labels_file):
+            with open(labels_file, "r", encoding="utf-8") as f:
+                temp_dict = json.load(f)
+            labels_dict.update(temp_dict)
             logging.info(f"Loaded {labels_file}")
-    else:
-        labels_dict = {}
 
-    start = time.time()
-    for _ in range(num_images):
-        generate_word(word, labels_dict, output_dir_images)
+        # Prepare arguments for the worker function, note that labels_dict is now a managed dict
+        args = [(word, labels_dict, output_dir_images) for _ in range(num_images)]
 
-    # save labels_dict to labels_file
+        # Use multiprocessing.Pool to parallelize the image generation
+        with Pool() as pool:
+            pool.map(worker, args)
+
+        start = time.time()
+
+        # After all processes complete, convert the managed dictionary back to a regular dict for saving
+        regular_labels_dict = dict(labels_dict)
+
+    # Save labels_dict to labels_file
     with open(labels_file, "w", encoding="utf-8") as f:
-        json.dump(labels_dict, f, ensure_ascii=False, indent=4)
+        json.dump(regular_labels_dict, f, ensure_ascii=False, indent=4)
 
     end = time.time()
     logging.info(f"Saved {labels_file}. Generated {num_images} images for {word}.")

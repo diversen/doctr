@@ -1,6 +1,11 @@
 # Install
 
+    # needed
     sudo apt-get install -y libpangocairo-1.0-0
+    
+    # some extra fonts. You may not need this
+    sudo apt-get install ttf-mscorefonts-installer
+    sudo apt-get install fonts-freefont-ttf
 
     git clone https://github.com/mindee/doctr
     cd doctr
@@ -13,7 +18,11 @@
 
 Will output training data to /home/dennis/d/validation. It will first generate at least 10 random words from wikipedia and then generate images for each word. The images will be stored in /home/dennis/d/train. The number of images of each word is controlled by the --num-images-per-word flag.
 
-    python generate-img.py --num-words 250000 --num-images-per-word 1 --output-dir /home/dennis/d/generate-test --word-list train-words.json --vocab danish --lang da
+    python generate-img.py --num-words 250000 --num-images-per-word 2 --output-dir train-data
+
+Restarting from a word:
+
+    python generate-img.py --num-words 250000 --num-images-per-word 2 --output-dir train-data --begin-word Kystflåden
 
 # train danish from scratch
 
@@ -30,23 +39,10 @@ Will output training data to /home/dennis/d/validation. It will first generate a
 # resume on crn_vgg16_bn 
 
     python references/recognition/train_pytorch.py crnn_vgg16_bn --vocab multilingual --train_path ~/d/train --val_path ~/d/validation --epochs 1 --resume /home/dennis/.cache/doctr/models/crnn_vgg16_bn-9762b0b0.pt
-
     
 
 python references/recognition/train_pytorch.py crnn_vgg16_bn --max-chars 32 --vocab multilingual --train_path ~/d/train --val_path ~/d/validation --epochs 5 --resume ./crnn_vgg16_bn_20240312-123338.pt --early-stop
 
-
-# Train status
-
-Epoch 1/1 - Validation loss: 0.0533324 (Exact: 93.36% | Partial: 93.94%)
-
-Epoch 1/1 - Validation loss: 0.04798 (Exact: 93.96% | Partial: 94.50%) 
-
-Epoch 1/2 - Validation loss: 0.0462669 (Exact: 94.01% | Partial: 94.62%) 
-Epoch 2/2 - Validation loss: 0.0425779 (Exact: 94.57% | Partial: 95.05%)
-
-
-# Hacking
 
 
 

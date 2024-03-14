@@ -44,6 +44,17 @@ def get_fonts():
     # Get all fonts except "DroidSansFallbackFull.ttf"
     # This does not support latin1
     fonts = [font for font in fonts if "DroidSansFallbackFull.ttf" not in font]
+
+    # remove "/usr/share/fonts/truetype/msttcorefonts/webdings.ttf"
+    # This does not support latin1
+
+    fonts = [font for font in fonts if "webdings.ttf" not in font]
+
+    # remove "Webdings.ttf"
+    # This does not support latin1
+
+    fonts = [font for font in fonts if "Webdings.ttf" not in font]
+
     return fonts
 
 
@@ -135,6 +146,10 @@ def generate_images_from_words(words, begin_word, num_images_per_word, output_di
     os.makedirs(output_dir_images, exist_ok=True)
     labels_file = os.path.join(output_dir, "labels.json")
 
+    if not os.path.exists(labels_file):
+        with open(labels_file, "w", encoding="utf-8") as f:
+            json.dump({}, f)
+
     manager = Manager()
     labels_dict = manager.dict()  # Create a managed dictionary
 
@@ -163,7 +178,12 @@ def generate_images_from_words(words, begin_word, num_images_per_word, output_di
 
             # log time taken
             time_taken = time.time() - start_time
-            logging.info(f"Time taken: {time_taken} seconds")
+
+            # rounded time_taken per batch
+            logging.info(f"Time taken per batch: {round(time_taken, 3)} seconds")
+
+            # rounded time taken per word
+            logging.info(f"Time taken per word: {round(time_taken / words_processed, 3)} seconds")
 
             # reset start time
             start_time = time.time()

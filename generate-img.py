@@ -20,9 +20,7 @@ def parse_args():
         "--output-dir", type=str, default="/home/dennis/d", help="Output directory"
     )
     parser.add_argument("--word-list", type=str, default="words.json", help="Word list")
-    parser.add_argument(
-        "--begin-word", type=str, default=None, help="Begin word in case of resuming"
-    )
+
     parser.add_argument(
         "--num-images-per-word",
         type=int,
@@ -40,6 +38,10 @@ def parse_args():
         type=str,
         default="da",
         help="Language to use for generating words",
+    )
+
+    parser.add_argument(
+        "--begin-word", type=str, default=None, help="Begin word in case of resuming"
     )
     return parser.parse_args()
 

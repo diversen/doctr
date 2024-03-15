@@ -1,25 +1,38 @@
 import argparse
-import json
-import logging
 import asyncio
+import json
 import os
 
-from doctr.datasets import VOCABS
 from word_image_synth.default_logger import configure_app_logging
-from word_image_synth.generate import generate_images_from_words  # Renamed function
+from word_image_synth.generate import generate_images_from_words
 from word_image_synth.wiki import generate_word_list
 
 configure_app_logging()
 
+
 def parse_args():
-    parser = argparse.ArgumentParser(description="Generate images from a list of words")
-    parser.add_argument(
-        "--num-words", type=int, default=20, help="Minimum number of words to generate. It may generate more words."
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Generate images from a list of words",
     )
     parser.add_argument(
-        "--output-dir", type=str, default="/home/dennis/d", help="Output directory"
+        "--num-words",
+        type=int,
+        default=20,
+        help="Minimum number of words to generate. It may generate more words.",
     )
-    parser.add_argument("--word-list", type=str, default="words.json", help="Word list")
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="/home/dennis/d",
+        help="Output directory",
+    )
+    parser.add_argument(
+        "--word-list",
+        type=str,
+        default="words.json",
+        help="Word list",
+    )
 
     parser.add_argument(
         "--num-images-per-word",
@@ -41,11 +54,16 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--begin-word", type=str, default=None, help="Begin word in case of resuming"
+        "--begin-word",
+        type=str,
+        default=None,
+        help="Begin word in case of resuming",
     )
     return parser.parse_args()
 
+
 async def main():
+    """The main function."""
     args = parse_args()
     num_words = args.num_words
     output_dir = args.output_dir
@@ -54,7 +72,7 @@ async def main():
     vocab = args.vocab
     lang = args.lang
 
-    word_list_path = os.path.join(output_dir, 'words.json')
+    word_list_path = os.path.join(output_dir, "words.json")
 
     # Generate output_dir if it does not exist
     os.makedirs(output_dir, exist_ok=True)
@@ -64,7 +82,14 @@ async def main():
         with open(word_list_path, "w", encoding="utf-8") as f:
             json.dump([], f)
 
-    await generate_word_list(word_list_path, num_words, vocab, lang=lang, concurrent_requests=10, save_every_n_tasks=10)
+    await generate_word_list(
+        word_list_path,
+        num_words,
+        vocab,
+        lang=lang,
+        concurrent_requests=10,
+        save_every_n_tasks=10,
+    )
 
     with open(word_list_path, "r", encoding="utf-8") as f:
         words = json.load(f)
@@ -74,8 +99,9 @@ async def main():
         begin_word=begin_word,
         num_images_per_word=num_images_per_word,
         output_dir=output_dir,
-        batch_size=500  # New parameter to define how many words are processed before saving the JSON file
+        batch_size=500,
     )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

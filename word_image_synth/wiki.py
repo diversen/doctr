@@ -1,11 +1,11 @@
 import asyncio
-import aiohttp
+import json
+import logging
 import os
 import tempfile
+
+import aiohttp
 from bs4 import BeautifulSoup
-import json
-import os
-import logging
 
 from doctr.datasets import VOCABS  # Ensure this is available in your environment
 
@@ -17,12 +17,15 @@ async def save_words_safe(words, json_file):
     """
     # Create a temporary file in the same directory as the original file
     dir_name = os.path.dirname(json_file)
-    with tempfile.NamedTemporaryFile(delete=False, mode="w", encoding="utf-8", dir=dir_name, suffix=".tmp") as tmp_file:
+    with tempfile.NamedTemporaryFile(
+        delete=False, mode="w", encoding="utf-8", dir=dir_name, suffix=".tmp"
+    ) as tmp_file:
         json.dump(words, tmp_file, ensure_ascii=False, indent=4)
         temp_file_name = tmp_file.name
 
     # Replace the original file with the temporary file
     os.replace(temp_file_name, json_file)
+
 
 async def fetch_page(session, lang="da"):
     """
@@ -33,6 +36,7 @@ async def fetch_page(session, lang="da"):
     async with session.get(random_url) as response:
         return await response.text()
 
+
 async def get_random_words(session, lang="da", vocab=None):
     """
     Extract words from a random Wikipedia page.
@@ -42,7 +46,7 @@ async def get_random_words(session, lang="da", vocab=None):
     article_text = soup.find_all("p")
     p_content = [tag.get_text().replace("\n", "").strip() for tag in article_text]
     words = " ".join(p_content).split(" ")
-    
+
     if vocab:
         vocab_ = VOCABS[vocab]
         words = [word for word in words if all(char in vocab_ for char in word)]
@@ -54,7 +58,15 @@ async def get_random_words(session, lang="da", vocab=None):
 
     return words
 
-async def generate_word_list(json_file, max_words, vocab, lang, concurrent_requests=5, save_every_n_tasks=5):
+
+async def generate_word_list(
+    json_file,
+    max_words,
+    vocab,
+    lang,
+    concurrent_requests=5,
+    save_every_n_tasks=5,
+):
     """
     Generate words from Wikipedia and save them to a json file,
     using asynchronous requests to fetch multiple pages concurrently.

@@ -16,13 +16,16 @@ import os
 import json
 import tempfile
 
+
 def save_labels(data, target_file_path):
 
     data = dict(data)  # Convert to standard dict
 
     # Create a temporary file in the same directory as the target file
     dir_name = os.path.dirname(target_file_path)
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False, dir=dir_name) as tmp_file:
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", delete=False, dir=dir_name
+    ) as tmp_file:
         json.dump(data, tmp_file, ensure_ascii=False, indent=4)
         temp_file_path = tmp_file.name
 
@@ -129,19 +132,25 @@ def generate_word(word, labels_dict, output_dir_images):
         break
 
 
-def generate_images_for_batch(words, output_dir_images, labels_dict, num_images_per_word):
-    args = [(word, labels_dict, output_dir_images, num_images_per_word) for word in words]
-    
+def generate_images_for_batch(
+    words, output_dir_images, labels_dict, num_images_per_word
+):
+    args = [
+        (word, labels_dict, output_dir_images, num_images_per_word) for word in words
+    ]
+
     with Pool() as pool:
-        pool.starmap(worker, args) 
+        pool.starmap(worker, args)
+
 
 def worker(word, labels_dict, output_dir_images, num_images_per_word):
     for _ in range(num_images_per_word):
         generate_word(word, labels_dict, output_dir_images)
 
 
-
-def generate_images_from_words(words, begin_word, num_images_per_word, output_dir, batch_size=10):
+def generate_images_from_words(
+    words, begin_word, num_images_per_word, output_dir, batch_size=10
+):
     output_dir_images = os.path.join(output_dir, "images")
     os.makedirs(output_dir_images, exist_ok=True)
     labels_file = os.path.join(output_dir, "labels.json")
@@ -153,7 +162,6 @@ def generate_images_from_words(words, begin_word, num_images_per_word, output_di
     manager = Manager()
     labels_dict = manager.dict()  # Create a managed dictionary
 
-    
     with open(labels_file, "r") as f:
         initial_labels = json.load(f)
         labels_dict.update(initial_labels)
@@ -174,7 +182,9 @@ def generate_images_from_words(words, begin_word, num_images_per_word, output_di
         if (i % batch_size == 0 and i != 0) or (word == words[-1]):
             # Save after processing each batch or on the last word
             save_labels(labels_dict, labels_file)
-            logging.info(f"Batch processed and saved. Total words processed: {words_processed}")
+            logging.info(
+                f"Batch processed and saved. Total words processed: {words_processed}"
+            )
 
             # log time taken
             time_taken = time.time() - start_time
@@ -183,14 +193,18 @@ def generate_images_from_words(words, begin_word, num_images_per_word, output_di
             logging.info(f"Time taken per batch: {round(time_taken, 4)} seconds")
 
             # rounded time taken per word
-            logging.info(f"Time taken per word: {round(time_taken / words_processed, 4)} seconds")
+            logging.info(
+                f"Time taken per word: {round(time_taken / words_processed, 4)} seconds"
+            )
 
             # reset start time
             start_time = time.time()
 
         # Process the current word
         logging.info(f"Generating images for word: {word}")
-        generate_images_for_batch([word], output_dir_images, labels_dict, num_images_per_word)
+        generate_images_for_batch(
+            [word], output_dir_images, labels_dict, num_images_per_word
+        )
         words_processed += 1
 
     # Save any remaining changes after loop ends
@@ -198,7 +212,9 @@ def generate_images_from_words(words, begin_word, num_images_per_word, output_di
     logging.info(f"Finished processing. Total words processed: {words_processed}")
 
 
-def set_labels(labels_file, max_chars, max_labels=None, vocab=None, vocab_required=None):
+def set_labels(
+    labels_file, max_chars, max_labels=None, vocab=None, vocab_required=None
+):
     """
     Generate labels for a max number of chars
     """
@@ -257,10 +273,16 @@ def generate_subset_labels(labels_file, max_chars, max_labels, vocab):
     vocab_chars = VOCABS[vocab]
 
     # remove labels that are not in vocab
-    labels_dict = {key: value for key, value in labels_dict.items() if all(char in vocab_chars for char in value)}
+    labels_dict = {
+        key: value
+        for key, value in labels_dict.items()
+        if all(char in vocab_chars for char in value)
+    }
 
     # remove labels that are greater than max_chars
-    labels_dict = {key: value for key, value in labels_dict.items() if len(value) <= max_chars}
+    labels_dict = {
+        key: value for key, value in labels_dict.items() if len(value) <= max_chars
+    }
 
     # continue if value has chars that are not in vocab
     # if not all(char in vocab_chars for char in value):

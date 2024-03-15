@@ -22,7 +22,7 @@ Will output training data to /home/dennis/d/validation. It will first generate a
 
 Restarting from a word:
 
-    python generate-img.py --num-words 250000 --num-images-per-word 2 --output-dir train-data --begin-word Kystflåden
+    python generate-img.py --num-words 250000 --num-images-per-word 2 --output-dir train-data --begin-word fremvisning
 
 # train danish from scratch
 

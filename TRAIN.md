@@ -12,6 +12,7 @@
     virtualenv venv
 
     pip install -r requirements-trdg.txt
+    pip install -e . --upgrade
     pip install -r references/requirements.txt
 
 # generate synth images 
@@ -41,7 +42,7 @@ Restarting from a word:
     python references/recognition/train_pytorch.py crnn_vgg16_bn --vocab multilingual --train_path ~/d/train --val_path ~/d/validation --epochs 1 --resume /home/dennis/.cache/doctr/models/crnn_vgg16_bn-9762b0b0.pt
     
 
-python references/recognition/train_pytorch.py crnn_vgg16_bn --max-chars 32 --vocab multilingual --train_path ~/d/train --val_path ~/d/validation --epochs 5 --resume ./crnn_vgg16_bn_20240312-123338.pt --early-stop
+python references/recognition/train_pytorch.py crnn_vgg16_bn --max-chars 32 --vocab danish --train_path ~/d/train --val_path ~/d/validation --epochs 5 --resume ./crnn_vgg16_bn_20240315-134327.pt --early-stop
 
 
 

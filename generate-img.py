@@ -74,7 +74,7 @@ async def main():
         begin_word=begin_word,
         num_images_per_word=num_images_per_word,
         output_dir=output_dir,
-        batch_size=100  # New parameter to define how many words are processed before saving the JSON file
+        batch_size=500  # New parameter to define how many words are processed before saving the JSON file
     )
 
 if __name__ == "__main__":

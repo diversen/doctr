@@ -180,10 +180,10 @@ def generate_images_from_words(words, begin_word, num_images_per_word, output_di
             time_taken = time.time() - start_time
 
             # rounded time_taken per batch
-            logging.info(f"Time taken per batch: {round(time_taken, 3)} seconds")
+            logging.info(f"Time taken per batch: {round(time_taken, 4)} seconds")
 
             # rounded time taken per word
-            logging.info(f"Time taken per word: {round(time_taken / words_processed, 3)} seconds")
+            logging.info(f"Time taken per word: {round(time_taken / words_processed, 4)} seconds")
 
             # reset start time
             start_time = time.time()

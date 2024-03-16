@@ -228,6 +228,8 @@ For a comprehensive comparison, we have compiled a detailed benchmark on publicl
 +----------------+----------------------------------------------------------+------------+---------------+------------+---------------+
 | TensorFlow     | db_resnet50 + master                                     | 72.73      | 74.00         | 84.13      | 75.05         |
 +----------------+----------------------------------------------------------+------------+---------------+------------+---------------+
+| TensorFlow     | db_resnet50 + sar_resnet31                               | 73.23      | 74.51         | 85.34      | 76.03         |
++----------------+----------------------------------------------------------+------------+---------------+------------+---------------+
 | TensorFlow     | db_resnet50 + vitstr_small                               | 68.57      | 69.77         | 78.24      | 69.51         |
 +----------------+----------------------------------------------------------+------------+---------------+------------+---------------+
 | TensorFlow     | db_resnet50 + vitstr_base                                | 70.96      | 72.20         | 82.10      | 72.94         |
@@ -241,6 +243,8 @@ For a comprehensive comparison, we have compiled a detailed benchmark on publicl
 | PyTorch        | db_resnet50 + crnn_mobilenet_v3_large                    | 73.17      | 75.90         | 84.96      | 79.25         |
 +----------------+----------------------------------------------------------+------------+---------------+------------+---------------+
 | PyTorch        | db_resnet50 + master                                     | 73.90      | 76.66         | 85.84      | 80.07         |
++----------------+----------------------------------------------------------+------------+---------------+------------+---------------+
+| PyTorch        | db_resnet50 + sar_resnet31                               | 73.58      | 76.33         | 85.64      | 79.88         |
 +----------------+----------------------------------------------------------+------------+---------------+------------+---------------+
 | PyTorch        | db_resnet50 + vitstr_small                               | 73.06      | 75.79         | 85.95      | 80.17         |
 +----------------+----------------------------------------------------------+------------+---------------+------------+---------------+
@@ -293,6 +297,16 @@ For instance, this snippet instantiates an end-to-end ocr_predictor working with
 
     from doctr.model import ocr_predictor
     model = ocr_predictor('linknet_resnet18', pretrained=True, assume_straight_pages=False, preserve_aspect_ratio=True)
+
+Additionally, you can change the batch size of the underlying detection and recognition predictors to optimize the performance depending on your hardware:
+
+* `det_bs`: batch size for the detection model (default: 2)
+* `reco_bs`: batch size for the recognition model (default: 128)
+
+.. code:: python3
+
+    from doctr.model import ocr_predictor
+    model = ocr_predictor(pretrained=True, det_bs=4, reco_bs=1024)
 
 To modify the output structure you can pass the following arguments to the predictor which will be handled by the underlying `DocumentBuilder`:
 

@@ -94,12 +94,16 @@ async def main():
     with open(word_list_path, "r", encoding="utf-8") as f:
         words = json.load(f)
 
+    # Randomize the list of words
+    import random
+    words = random.sample(words, len(words))
+
     generate_images_from_words(
         words=words,
         begin_word=begin_word,
         num_images_per_word=num_images_per_word,
         output_dir=output_dir,
-        batch_size=500,
+        batch_size=1000,
     )
 
 

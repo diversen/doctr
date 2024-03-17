@@ -63,6 +63,12 @@ def get_fonts():
 
 fonts = get_fonts()
 
+# Only keep font files that has 'Couri' in the path
+# fonts = [font for font in fonts if "Couri" in font]
+# fonts = [font for font in fonts if "SpecialElite-Regular" in font]
+
+# Keep Couri and SpecialElite-Regular
+fonts = [font for font in fonts if "Couri" in font or "SpecialElite-Regular" in font]
 
 text_colors = [
     "#000000",  # Black
@@ -94,8 +100,20 @@ def generate_word(word, labels_dict, output_dir_images):
     skewing_angle = random.randint(0, 15)
     blur = random.choice([0, 1, 2])
     distorsion_orientation = random.choice([0, 1])
+    background_type = random.choice([0, 1, 2])
     space_width = random.uniform(0.5, 1.5)
     character_spacing = random.randint(0, 10)
+
+    # more space width
+    space_width = random.uniform(0.5, 2.5)
+
+    # more character spacing
+    character_spacing = random.randint(0, 20)
+
+    # Less skewing
+    skewing_angle = random.randint(0, 5)
+   
+
     # Initialize the generator for the current word with configurations
     string_generator = GeneratorFromStrings(
         strings=[word],
@@ -110,8 +128,9 @@ def generate_word(word, labels_dict, output_dir_images):
         distorsion_orientation=distorsion_orientation,
         alignment=1,
         text_color=text_color,
+        stroke_fill=text_color,
         # orientation=random.choice([0, 1]),
-        background_type=random.choice([0, 1, 2]),
+        background_type=background_type,
         space_width=space_width,
         character_spacing=character_spacing,
         margins=(5, 5, 5, 5),
@@ -145,6 +164,11 @@ def generate_images_for_batch(
 
 def worker(word, labels_dict, output_dir_images, num_images_per_word):
     for _ in range(num_images_per_word):
+        # Make 1/10 of the images with the word in uppercase
+        if random.randint(0, 9) == 0:
+            word = word.upper()
+            logging.info(f"Uppercase: {word}")
+
         generate_word(word, labels_dict, output_dir_images)
 
 
@@ -173,6 +197,8 @@ def generate_images_from_words(
     start_time = time.time()
 
     for i, word in enumerate(words):
+
+        # word = word.upper()
         if not processing_started:
             if word == begin_word:
                 processing_started = True
@@ -267,6 +293,11 @@ def generate_subset_labels(labels_file, max_chars, max_labels, vocab):
     with open(labels_file, "r", encoding="utf-8") as f:
         labels_dict = json.load(f)
 
+    # add backup of labels_file
+    labels_backup_file = labels_file.replace(".json", f".json.backup")
+
+    os.system(f"cp {labels_file} {labels_backup_file}")
+
     # size of labels before max chars
     logging.info(f"Size of labels before max labels: {len(labels_dict)}")
 
@@ -297,12 +328,10 @@ def generate_subset_labels(labels_file, max_chars, max_labels, vocab):
     for key in labels_keys[:max_labels]:
         labels_subset[key] = labels_dict[key]
 
-    labels_subset_file = labels_file.replace(".json", f"_subset_{max_labels}.json")
-    with open(labels_subset_file, "w", encoding="utf-8") as f:
+    with open(labels_file, "w", encoding="utf-8") as f:
         json.dump(labels_subset, f, ensure_ascii=False, indent=4)
 
     # print size of labels
     logging.info(f"Size of labels: {len(labels_subset)}")
+    logging.info(f"Saved {labels_file}.")
 
-    logging.info(f"Saved {labels_subset_file}.")
-    return labels_subset_file

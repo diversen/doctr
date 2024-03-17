@@ -27,23 +27,16 @@ Restarting from a word:
 
 # train danish from scratch
 
-    python references/recognition/train_pytorch.py crnn_vgg16_bn --vocab danish --train_path train --val_path val --epochs 5 
+    python references/recognition/train_pytorch.py crnn_vgg16_bn --vocab danish --train_path train-data --val_path validation-data --epochs 5 
 
 # resume from french model
 
-    python references/recognition/train_pytorch.py crnn_vgg16_bn --max-chars 32 --vocab multilingual --train_path ~/d/train --val_path ~/d/validation --epochs 2 --pretrained --workers 4
+    python references/recognition/train_pytorch.py crnn_vgg16_bn --max-chars 32 --vocab danish --train_path train-data --val_path validation-data --epochs 5 --pretrained
 
-# train multilingual
+# resume on local trained model
 
-    python references/recognition/train_pytorch.py crnn_vgg16_bn --max-chars 32 --vocab multilingual --train_path ~/d/train --val_path ~/d/validation --epochs 5 --resume /home/dennis/.cache/doctr/models/crnn_vgg16_bn-9762b0b0.pt --early_stop
+    python references/recognition/train_pytorch.py crnn_vgg16_bn --max-chars 32 --vocab danish --train_path train-data --val_path validation-data --epochs 5 --pretrained --resume crnn_vgg16_bn_20240316-233300.pt
 
 # resume on crn_vgg16_bn 
 
-    python references/recognition/train_pytorch.py crnn_vgg16_bn --vocab multilingual --train_path ~/d/train --val_path ~/d/validation --epochs 1 --resume /home/dennis/.cache/doctr/models/crnn_vgg16_bn-9762b0b0.pt
-    
-
-python references/recognition/train_pytorch.py crnn_vgg16_bn --max-chars 32 --vocab danish --train_path ~/d/train --val_path ~/d/validation --epochs 5 --resume ./crnn_vgg16_bn_20240315-134327.pt --early-stop
-
-
-
-
+    python references/recognition/train_pytorch.py crnn_vgg16_bn --vocab danish --train_path train-data --val_path validation-data --epochs 1 --resume /home/dennis/.cache/doctr/models/crnn_vgg16_bn-9762b0b0.pt

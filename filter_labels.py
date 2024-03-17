@@ -12,14 +12,14 @@ configure_app_logging()
 # set_labels("/home/dennis/d/validation/labels.json.backup", max_chars=32, max_labels=10000, vocab="danish", vocab_required="éæøåÉÆØÅ")
 
 generate_subset_labels(
-    "/home/dennis/d/train/labels.json.backup",
+    "train-data/labels.json",
     max_chars=32,
-    max_labels=50000,
+    max_labels=1000000,
     vocab="danish",
 )
 generate_subset_labels(
-    "/home/dennis/d/validation/labels.json.backup",
+    "validation-data/labels.json",
     max_chars=32,
-    max_labels=10000,
+    max_labels=1000000,
     vocab="danish",
 )

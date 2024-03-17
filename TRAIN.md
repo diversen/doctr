@@ -40,3 +40,7 @@ Restarting from a word:
 # resume on crn_vgg16_bn 
 
     python references/recognition/train_pytorch.py crnn_vgg16_bn --vocab danish --train_path train-data --val_path validation-data --epochs 1 --resume /home/dennis/.cache/doctr/models/crnn_vgg16_bn-9762b0b0.pt
+
+# push to hub
+
+ python references/recognition/train_pytorch.py crnn_vgg16_bn --max-chars 32 --vocab danish --train_path train-data --val_path validation-data --epochs 1 --pretrained --resume crnn_vgg16_bn_20240317-095746.pt --push-to-hub --name doctr-torch-crnn_vgg16_bn-danish-v1

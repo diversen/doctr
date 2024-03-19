@@ -165,7 +165,6 @@ def generate_images_from_words(
         generate_images_for_batch(
             [word], output_dir_images, labels_dict, num_images_per_word
         )
-        print(labels_dict)
         save_labels_to_db(labels_dict, output_dir)
         words_processed += 1
 
@@ -257,10 +256,6 @@ def generate_subset_labels(
     labels_dict = {
         key: value for key, value in labels_dict.items() if len(value) <= max_chars
     }
-
-    # continue if value has chars that are not in vocab
-    # if not all(char in vocab_chars for char in value):
-    #     continue
 
     # randomize labels
     labels_keys = list(labels_dict.keys())

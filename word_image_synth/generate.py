@@ -4,7 +4,6 @@ import os
 import random
 import time
 import uuid
-import gc
 
 # import all from settings under the namespace `settings`
 import settings
@@ -17,23 +16,42 @@ from doctr.datasets import VOCABS
 
 import os
 import json
-import tempfile
+import sqlite3
 
 
-def save_labels(data, target_file_path):
 
-    data = dict(data)  # Convert to standard dict
+def init_db(output_dir_images):
+    """
+    Initialize the SQLite database and create the labels table if it doesn't exist.
+    """
+    db_path = os.path.join(output_dir_images, 'database.db')
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS labels (
+            image_name TEXT PRIMARY KEY,
+            word TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-    # Create a temporary file in the same directory as the target file
-    dir_name = os.path.dirname(target_file_path)
-    with tempfile.NamedTemporaryFile(
-        mode="w", encoding="utf-8", delete=False, dir=dir_name
-    ) as tmp_file:
-        json.dump(data, tmp_file, ensure_ascii=False, indent=4)
-        temp_file_path = tmp_file.name
+def save_labels_to_db(labels_dict, output_dir_images):
+    """
+    Save labels to the SQLite database.
+    """
+    init_db(output_dir_images)
 
-    # Atomically rename the temporary file to the target file
-    os.rename(temp_file_path, target_file_path)
+    db_path = os.path.join(output_dir_images, 'database.db')
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    for image_name, word in labels_dict.items():
+        c.execute('''
+            INSERT INTO labels (image_name, word) VALUES (?, ?)
+            ON CONFLICT(image_name) DO UPDATE SET word=excluded.word;
+        ''', (image_name, word))
+    conn.commit()
+    conn.close()
 
 
 def generate_word(word, labels_dict, output_dir_images):
@@ -132,65 +150,25 @@ def generate_images_from_words(
     begin_word,
     num_images_per_word,
     output_dir,
-    batch_size=10,
 ):
     output_dir_images = os.path.join(output_dir, "images")
     os.makedirs(output_dir_images, exist_ok=True)
-    labels_file = os.path.join(output_dir, "labels.json")
-
-    if not os.path.exists(labels_file):
-        with open(labels_file, "w", encoding="utf-8") as f:
-            json.dump({}, f)
 
     manager = Manager()
-    labels_dict = manager.dict()  # Create a managed dictionary
-
-    with open(labels_file, "r") as f:
-        initial_labels = json.load(f)
-        labels_dict.update(initial_labels)
-
-    processing_started = False if begin_word else True
     words_processed = 0
 
-    start_time = time.time()
     for i, word in enumerate(words):
 
-        if not processing_started:
-            if word == begin_word:
-                processing_started = True
-            else:
-                continue
+        labels_dict = manager.dict() 
+        logging.info(f"{i+1}/{len(words)}. Generating {num_images_per_word} images for word: {word}")
 
-        if (i % batch_size == 0 and i != 0) or (word == words[-1]):
-            # Save after processing each batch or on the last word
-            save_labels(labels_dict, labels_file)
-            logging.info(
-                f"Batch processed and saved. Total words processed: {words_processed}"
-            )
-
-            # log time taken
-            time_taken = time.time() - start_time
-
-            # rounded time_taken per batch
-            logging.info(f"Time taken per batch: {round(time_taken, 4)} seconds")
-
-            # rounded time taken per word
-            logging.info(
-                f"Time taken per word: {round(time_taken / words_processed, 4)} seconds"
-            )
-
-            # reset start time
-            start_time = time.time()
-
-        # Process the current word
-        logging.info(f"Generating images for word: {word}")
         generate_images_for_batch(
             [word], output_dir_images, labels_dict, num_images_per_word
         )
+        print(labels_dict)
+        save_labels_to_db(labels_dict, output_dir)
         words_processed += 1
 
-    # Save any remaining changes after loop ends
-    save_labels(labels_dict, labels_file)
     logging.info(f"Finished processing. Total words processed: {words_processed}")
 
 

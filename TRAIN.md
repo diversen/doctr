@@ -6,6 +6,7 @@
     # some extra fonts. You may not need this
     sudo apt-get install ttf-mscorefonts-installer
     sudo apt-get install fonts-freefont-ttf
+    sudo apt-get install -y fonts-ebgaramond
 
     git clone https://github.com/mindee/doctr
     cd doctr

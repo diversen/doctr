@@ -56,6 +56,9 @@ async def get_random_words(session, lang="da", vocab=None):
     # remove words over 32 chars
     words = [word for word in words if len(word) <= 32]
 
+    # remove words less than 2 chars
+    words = [word for word in words if len(word) >= 2]
+
     return words
 
 

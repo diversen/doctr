@@ -6,6 +6,9 @@ import time
 import uuid
 import gc
 
+# import all from settings under the namespace `settings`
+import settings
+
 from multiprocessing import Pool
 from multiprocessing import Manager
 from trdg.generators import GeneratorFromStrings
@@ -33,92 +36,34 @@ def save_labels(data, target_file_path):
     os.rename(temp_file_path, target_file_path)
 
 
-# find all .ttf files in /usr/share/fonts
-def get_fonts():
-    """
-    Get all .ttf files in /usr/share/fonts
-    """
-    fonts = []
-    for root, dirs, files in os.walk("/usr/share/fonts"):
-        for file in files:
-            if file.endswith(".ttf"):
-                fonts.append(os.path.join(root, file))
-
-    # Get all fonts except "DroidSansFallbackFull.ttf"
-    # This does not support latin1
-    fonts = [font for font in fonts if "DroidSansFallbackFull.ttf" not in font]
-
-    # remove "/usr/share/fonts/truetype/msttcorefonts/webdings.ttf"
-    # This does not support latin1
-
-    fonts = [font for font in fonts if "webdings.ttf" not in font]
-
-    # remove "Webdings.ttf"
-    # This does not support latin1
-
-    fonts = [font for font in fonts if "Webdings.ttf" not in font]
-
-    return fonts
-
-
-fonts = get_fonts()
-
-# Only keep font files that has 'Couri' in the path
-# fonts = [font for font in fonts if "Couri" in font]
-# fonts = [font for font in fonts if "SpecialElite-Regular" in font]
-
-# Keep Couri and SpecialElite-Regular
-fonts = [font for font in fonts if "Couri" in font or "SpecialElite-Regular" in font]
-
-text_colors = [
-    "#000000",  # Black
-    "#FF0000",  # Red
-    "#00FF00",  # Green
-    "#0000FF",  # Blue
-    "#FFFF00",  # Yellow
-    "#00FFFF",  # Cyan
-    "#FF00FF",  # Magenta
-    "#C0C0C0",  # Silver
-    "#808080",  # Gray
-    "#800000",  # Maroon
-    "#808000",  # Olive
-    "#008000",  # Dark Green
-    "#800080",  # Purple
-    "#008080",  # Teal
-    "#000080",  # Navy
-]
-
-
 def generate_word(word, labels_dict, output_dir_images):
     """
     Generate an image for a single word
     """
-    font = random.choice(fonts)
-    text_color = random.choice(text_colors)
-    distorsion_type = random.choice([0, 1, 2])
-    size = random.randint(32, 124)  # Randomize font size
-    skewing_angle = random.randint(0, 15)
-    blur = random.choice([0, 1, 2])
-    distorsion_orientation = random.choice([0, 1])
-    background_type = random.choice([0, 1, 2])
-    space_width = random.uniform(0.5, 1.5)
-    character_spacing = random.randint(0, 10)
 
-    # more space width
-    space_width = random.uniform(0.5, 2.5)
+    font = settings.get_font()
+    text_color = settings.get_text_color()
+    distorsion_type = settings.distorsion_type
 
-    # more character spacing
-    character_spacing = random.randint(0, 20)
+    size = settings.get_size()
+    space_width = settings.get_space_width()
+    character_spacing = settings.get_character_spacing()
 
-    # Less skewing
-    skewing_angle = random.randint(0, 5)
-   
+    skewing_angle = settings.get_skewing_angle()
+    blur = settings.get_blur()
+    distorsion_orientation = settings.get_distorsion_orientation()
+    background_type = settings.get_background_type()
+    space_width = settings.get_space_width()
+    character_spacing = settings.get_character_spacing()
+
+    # language = settings.language
+    orientation = settings.orientation
 
     # Initialize the generator for the current word with configurations
     string_generator = GeneratorFromStrings(
         strings=[word],
         fonts=[font],
-        language="da",
+        # language=language,
         size=size,
         skewing_angle=skewing_angle,
         random_skew=True,
@@ -129,7 +74,7 @@ def generate_word(word, labels_dict, output_dir_images):
         alignment=1,
         text_color=text_color,
         stroke_fill=text_color,
-        # orientation=random.choice([0, 1]),
+        orientation=orientation,
         background_type=background_type,
         space_width=space_width,
         character_spacing=character_spacing,
@@ -152,28 +97,42 @@ def generate_word(word, labels_dict, output_dir_images):
 
 
 def generate_images_for_batch(
-    words, output_dir_images, labels_dict, num_images_per_word
+    words,
+    output_dir_images,
+    labels_dict,
+    num_images_per_word,
 ):
     args = [
-        (word, labels_dict, output_dir_images, num_images_per_word) for word in words
+        (
+            word,
+            labels_dict,
+            output_dir_images,
+            num_images_per_word,
+        )
+        for word in words
     ]
 
     with Pool() as pool:
         pool.starmap(worker, args)
 
 
-def worker(word, labels_dict, output_dir_images, num_images_per_word):
+def worker(
+    word,
+    labels_dict,
+    output_dir_images,
+    num_images_per_word,
+):
     for _ in range(num_images_per_word):
-        # Make 1/10 of the images with the word in uppercase
-        if random.randint(0, 9) == 0:
-            word = word.upper()
-            logging.info(f"Uppercase: {word}")
-
-        generate_word(word, labels_dict, output_dir_images)
+        word_cased = settings.transform_word(word)
+        generate_word(word_cased, labels_dict, output_dir_images)
 
 
 def generate_images_from_words(
-    words, begin_word, num_images_per_word, output_dir, batch_size=10
+    words,
+    begin_word,
+    num_images_per_word,
+    output_dir,
+    batch_size=10,
 ):
     output_dir_images = os.path.join(output_dir, "images")
     os.makedirs(output_dir_images, exist_ok=True)
@@ -193,12 +152,9 @@ def generate_images_from_words(
     processing_started = False if begin_word else True
     words_processed = 0
 
-    # get start time
     start_time = time.time()
-
     for i, word in enumerate(words):
 
-        # word = word.upper()
         if not processing_started:
             if word == begin_word:
                 processing_started = True
@@ -239,7 +195,11 @@ def generate_images_from_words(
 
 
 def set_labels(
-    labels_file, max_chars, max_labels=None, vocab=None, vocab_required=None
+    labels_file,
+    max_chars,
+    max_labels=None,
+    vocab=None,
+    vocab_required=None,
 ):
     """
     Generate labels for a max number of chars
@@ -286,7 +246,12 @@ def set_labels(
     logging.info(f"Saved {labels_filtered_file}.")
 
 
-def generate_subset_labels(labels_file, max_chars, max_labels, vocab):
+def generate_subset_labels(
+    labels_file,
+    max_chars,
+    max_labels,
+    vocab,
+):
     """
     Generate a subset of labels
     """
@@ -334,4 +299,3 @@ def generate_subset_labels(labels_file, max_chars, max_labels, vocab):
     # print size of labels
     logging.info(f"Size of labels: {len(labels_subset)}")
     logging.info(f"Saved {labels_file}.")
-

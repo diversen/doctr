@@ -1,13 +1,12 @@
 import argparse
 import asyncio
+import random
 import json
 import os
 
 from word_image_synth.default_logger import configure_app_logging
 from word_image_synth.generate import generate_images_from_words
 from word_image_synth.wiki import generate_word_list
-
-configure_app_logging()
 
 
 def parse_args():
@@ -26,12 +25,6 @@ def parse_args():
         type=str,
         default="/home/dennis/d",
         help="Output directory",
-    )
-    parser.add_argument(
-        "--word-list",
-        type=str,
-        default="words.json",
-        help="Word list",
     )
 
     parser.add_argument(
@@ -87,7 +80,7 @@ async def main():
         num_words,
         vocab,
         lang=lang,
-        concurrent_requests=10,
+        concurrent_requests=4,
         save_every_n_tasks=10,
     )
 
@@ -95,7 +88,6 @@ async def main():
         words = json.load(f)
 
     # Randomize the list of words
-    import random
     words = random.sample(words, len(words))
 
     generate_images_from_words(
@@ -106,6 +98,6 @@ async def main():
         batch_size=1000,
     )
 
-
 if __name__ == "__main__":
+    configure_app_logging()
     asyncio.run(main())

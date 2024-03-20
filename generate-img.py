@@ -73,6 +73,7 @@ async def main():
         words=words,
         num_images_per_word=num_images_per_word,
         output_dir=output_dir,
+        lang=lang,
     )
 
 if __name__ == "__main__":

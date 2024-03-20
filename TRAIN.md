@@ -3,10 +3,10 @@
     # needed
     sudo apt-get install -y libpangocairo-1.0-0
     
-    # some extra fonts. You may not need this
-    sudo apt-get install ttf-mscorefonts-installer
-    sudo apt-get install fonts-freefont-ttf
-    sudo apt-get install -y fonts-ebgaramond
+    # some extra fonts. These are already included in ./fonts
+    # sudo apt-get install ttf-mscorefonts-installer
+    # sudo apt-get install fonts-freefont-ttf
+    # sudo apt-get install -y fonts-ebgaramond
 
     git clone https://github.com/mindee/doctr
     cd doctr
@@ -18,13 +18,18 @@
 
 # generate synth images 
 
-Will output training data to /home/dennis/d/validation. It will first generate at least 10 random words from wikipedia and then generate images for each word. The images will be stored in /home/dennis/d/train. The number of images of each word is controlled by the --num-images-per-word flag.
+**generate some words from wikipedia**
 
-    python generate-img.py --num-words 250000 --num-images-per-word 2 --output-dir train-data
+This will generate at least `1000` words in a sqlite3 `database.db` placed in `output`. 
+Using docTR vocab `danish` and wiki lang `da` 
 
-Restarting from a word:
+    python generate-words.py --num-words 1000 --output-dir output --vocab danish --lang da
 
-    python generate-img.py --num-words 250000 --num-images-per-word 2 --output-dir train-data --begin-word fremvisning
+**generate images from database words**
+
+In the `output/images` generate 1000 x 2 images and save all image names and labels to `labels.json` 
+
+    python generate-img.py --num-words 1000 --num-images-per-word 2 --output-dir output --lang da
 
 # train danish from scratch
 

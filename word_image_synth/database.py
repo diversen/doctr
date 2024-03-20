@@ -6,6 +6,7 @@ class DatabaseManager:
     """
     Class to manage the SQLite database.
     """
+
     def __init__(self, output_dir):
         """Initialize the database connection."""
         if not os.path.exists(output_dir):
@@ -23,13 +24,14 @@ class DatabaseManager:
                (word TEXT NOT NULL UNIQUE, lang TEXT NOT NULL)"""
         )
         self.cursor.execute(
-        """
+            """
         CREATE TABLE IF NOT EXISTS labels (
             image_name TEXT PRIMARY KEY,
-            word TEXT NOT NULL
+            word TEXT NOT NULL,
+            lang TEXT NOT NULL
         )
         """
-    )
+        )
         self.conn.commit()
 
     async def get_word_count(self, lang):
@@ -65,8 +67,8 @@ class DatabaseManager:
         )
         words = [row[0] for row in self.cursor.fetchall()]
         return words
-    
-    def save_labels_to_db(self, labels_dict):
+
+    def save_labels_to_db(self, labels_dict, lang):
         """
         Save labels to the SQLite database.
         """
@@ -75,28 +77,30 @@ class DatabaseManager:
         for image_name, word in labels_dict.items():
             c.execute(
                 """
-                INSERT INTO labels (image_name, word) VALUES (?, ?)
+                INSERT INTO labels (image_name, word, lang) VALUES (?, ?, ?)
                 ON CONFLICT(image_name) DO UPDATE SET word=excluded.word;
             """,
-                (image_name, word),
+                (image_name, word, lang),
             )
         conn.commit()
         conn.close()
-    
-    def get_labels(self, lang=None):
+
+    def get_labels(self, lang=None, limit=None):
         """
         Get labels from the SQLite database.
+        Option for filtering by language and limiting the number of labels.
         """
+        query = "SELECT * FROM labels"
         if lang:
-            self.cursor.execute(
-                "SELECT image_name, word FROM labels WHERE lang = ?", (lang,)
-            )
-        else:
-            self.cursor.execute("SELECT image_name, word FROM labels")
+            query += f" WHERE lang = '{lang}'"
+        if limit:
+            query += f" LIMIT {limit}"
+        self.cursor.execute(query)
         labels = self.cursor.fetchall()
 
-        # convert to a dictionary
-        labels = {image_name: word for image_name, word in labels}
+        # Convert the labels to a dictionary
+        labels = {row[0]: row[1] for row in labels}
+
         return labels
 
     def close(self):

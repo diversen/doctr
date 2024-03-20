@@ -103,6 +103,7 @@ def generate_images_from_words(
     words,
     num_images_per_word,
     output_dir,
+    lang,
 ):
     db = DatabaseManager(output_dir)
     output_dir_images = os.path.join(output_dir, "images")
@@ -121,20 +122,7 @@ def generate_images_from_words(
         generate_images_for_batch(
             [word], output_dir_images, labels_dict, num_images_per_word
         )
-        db.save_labels_to_db(labels_dict)
+        db.save_labels_to_db(labels_dict, lang)
         words_processed += 1
 
     logging.info(f"Finished processing. Total words processed: {words_processed}")
-
-    # Export the labels as a dict
-    labels = db.get_labels()
-
-    # save labels as json file named labels.json encoded as utf-8 to the output directory
-    labels_json_path = os.path.join(output_dir, "labels.json")
-    with open(labels_json_path, "w", encoding="utf-8") as f:
-        json.dump(labels, f, ensure_ascii=False, indent=4)
-
-    # Close the database connection
-    db.close()
-
-

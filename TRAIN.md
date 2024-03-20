@@ -27,9 +27,13 @@ Using docTR vocab `danish` and wiki lang `da`
 
 **generate images from database words**
 
-In the `output/images` generate 1000 x 2 images and save all image names and labels to `labels.json` 
+In the `output/images` generate `1000 x 2` images using `da` words. 
 
     python generate-img.py --num-words 1000 --num-images-per-word 2 --output-dir output --lang da
+
+**generate labels**
+
+    python generate-labels.py --output-dir output --num-words 10 --lang da
 
 # train danish from scratch
 

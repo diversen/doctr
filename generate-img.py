@@ -5,8 +5,8 @@ import os
 import random
 
 from word_image_synth.default_logger import configure_app_logging
-from word_image_synth.generate import generate_images_from_words
-from word_image_synth.wiki import generate_word_list
+from word_image_synth.generate_images import generate_images_from_words
+from word_image_synth.database import DatabaseManager
 
 
 def parse_args():
@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument(
         "--output-dir",
         type=str,
-        default="/home/dennis/d",
+        default="output",
         help="Output directory",
     )
 
@@ -58,41 +58,19 @@ def parse_args():
 async def main():
     """The main function."""
     args = parse_args()
+
+    print(args)
+
     num_words = args.num_words
     output_dir = args.output_dir
-    begin_word = args.begin_word
     num_images_per_word = args.num_images_per_word
-    vocab = args.vocab
     lang = args.lang
 
-    word_list_path = os.path.join(output_dir, "words.json")
-
-    # Generate output_dir if it does not exist
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Generate words.json file if it does not exist
-    if not os.path.exists(word_list_path):
-        with open(word_list_path, "w", encoding="utf-8") as f:
-            json.dump([], f)
-
-    await generate_word_list(
-        output_dir,
-        num_words,
-        vocab,
-        lang=lang,
-        concurrent_requests=4,
-        save_every_n_tasks=10,
-    )
-
-    with open(word_list_path, "r", encoding="utf-8") as f:
-        words = json.load(f)
-
-    # Randomize the list of words
-    words = random.sample(words, len(words))
+    db = DatabaseManager(output_dir)
+    words = await db.get_words(lang, limit=num_words)
 
     generate_images_from_words(
         words=words,
-        begin_word=begin_word,
         num_images_per_word=num_images_per_word,
         output_dir=output_dir,
     )

@@ -48,6 +48,8 @@ async def main():
     vocab = args.vocab
     lang = args.lang
 
+    print(args)
+
     # Generate output_dir if it does not exist
     os.makedirs(output_dir, exist_ok=True)
 
@@ -57,7 +59,6 @@ async def main():
         vocab,
         lang=lang,
         concurrent_requests=4,
-        # save_every_n_tasks=10,
     )
 
 

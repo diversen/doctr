@@ -1,8 +1,5 @@
 import argparse
 import asyncio
-import json
-import os
-import random
 
 from word_image_synth.default_logger import configure_app_logging
 from word_image_synth.generate_images import generate_images_from_words

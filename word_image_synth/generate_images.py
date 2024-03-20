@@ -1,7 +1,6 @@
 import logging
 import os
 import uuid
-import json
 from multiprocessing import Manager, Pool
 import settings
 from word_image_synth.database import DatabaseManager

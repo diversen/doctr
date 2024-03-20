@@ -91,8 +91,3 @@ async def generate_word_list(output_dir, max_words, vocab, lang, concurrent_requ
         if words:
             await db.save_words_to_db(words, lang)
             logging.info("Final save: Saved remaining words.")
-
-    # select all labels from the database
-    labels = db.get_labels()
-
-    # 

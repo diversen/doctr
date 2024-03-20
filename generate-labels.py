@@ -37,7 +37,6 @@ db = DatabaseManager(args.output_dir)
 
 labels = db.get_labels(lang=args.lang, limit=args.num_words)
 
-# save labels as json file named labels.json encoded as utf-8 to the output directory
 labels_json_path = os.path.join(args.output_dir, "labels.json")
 with open(labels_json_path, "w", encoding="utf-8") as f:
     json.dump(labels, f, ensure_ascii=False, indent=4)

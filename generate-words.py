@@ -50,7 +50,6 @@ async def main():
 
     print(args)
 
-    # Generate output_dir if it does not exist
     os.makedirs(output_dir, exist_ok=True)
 
     await generate_word_list(

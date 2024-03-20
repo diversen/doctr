@@ -1,30 +1,11 @@
 import asyncio
-import json
 import logging
-import os
-import tempfile
 
-import aiohttp
+from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 
 from doctr.datasets import VOCABS  # Ensure this is available in your environment
-
-
-async def save_words_safe(words, json_file):
-    """
-    Save the words to the json_file safely by writing to a temporary file
-    and then renaming it to the original file name.
-    """
-    # Create a temporary file in the same directory as the original file
-    dir_name = os.path.dirname(json_file)
-    with tempfile.NamedTemporaryFile(
-        delete=False, mode="w", encoding="utf-8", dir=dir_name, suffix=".tmp"
-    ) as tmp_file:
-        json.dump(words, tmp_file, ensure_ascii=False, indent=4)
-        temp_file_name = tmp_file.name
-
-    # Replace the original file with the temporary file
-    os.replace(temp_file_name, json_file)
+from word_image_synth.database import DatabaseManager
 
 
 async def fetch_page(session, lang="da"):
@@ -62,55 +43,52 @@ async def get_random_words(session, lang="da", vocab=None):
     return words
 
 
-async def generate_word_list(
-    json_file,
-    max_words,
-    vocab,
-    lang,
-    concurrent_requests=5,
-    save_every_n_tasks=5,
-):
+async def generate_word_list(output_dir, max_words, vocab, lang, concurrent_requests=5):
     """
-    Generate words from Wikipedia and save them to a json file,
+    Generate words from Wikipedia and save them to an SQLite database,
     using asynchronous requests to fetch multiple pages concurrently.
-    Save the progress to the file after every 'save_every_n_tasks' tasks are completed.
+    Words are saved to the database after each finished task.
     """
-    if not os.path.exists(json_file):
-        await save_words_safe([], json_file)
+    db = DatabaseManager(output_dir)
 
-    with open(json_file, "r", encoding="utf-8") as f:
-        words = json.load(f)
+    # Check the current count of words for the specified language
+    current_count = await db.get_word_count(lang)
+    if current_count >= max_words:
+        logging.info(
+            f"The database already contains {current_count} words for the language '{lang}', "
+            f"which meets or exceeds the max_words limit of {max_words}. No additional words will be fetched."
+        )
+        return
 
-    print(f"Fetching {max_words} words from Wikipedia in {lang}...")
+    async with ClientSession() as session:
+        tasks = set()  # Using a set to manage tasks
+        words = set()  # To store unique words
 
-    async with aiohttp.ClientSession() as session:
-        tasks = []
-        completed_tasks = 0  # Keep track of completed tasks to know when to save
-        while len(words) < max_words:
-            for _ in range(concurrent_requests - len(tasks)):
-                if len(words) >= max_words:
-                    break  # Stop creating new tasks if we have enough words
+        while current_count < max_words:
+            # Only create new tasks if below the concurrent request limit and target word count has not been reached
+            while len(tasks) < concurrent_requests and current_count < max_words:
                 task = asyncio.create_task(get_random_words(session, lang, vocab))
-                tasks.append(task)
+                tasks.add(task)
 
             done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
             for task in done:
                 tasks.remove(task)
-                words.extend(task.result())
-                words = sorted(set(words))  # Unique words, sorted
-                completed_tasks += 1
+                new_words = task.result()
+                words.update(new_words)
 
-                if completed_tasks >= save_every_n_tasks:
-                    # Save progress to the file safely
-                    await save_words_safe(words, json_file)
-                    logging.info(f"Saved {len(words)} words to {json_file}.")
-                    completed_tasks = 0  # Reset the counter
+                # Save words after each task completion
+                await db.save_words_to_db(words, lang)
+                words.clear()  # Clear the set after saving
+                logging.info(f"Saved {len(new_words)} words to database. Progress is now updated.")
 
-                if len(words) >= max_words:
-                    break  # Break if max words is reached
+                # Update current_count to ensure it reflects the latest number of words in the database for the specified language
+                current_count = await db.get_word_count(lang)
+                if current_count >= max_words:
+                    break  # Exit if the target word count is reached or exceeded
 
-    # Final save to ensure all progress is stored
-    words = words[:max_words]  # Ensure we don't exceed max_words
-    await save_words_safe(words, json_file)
-    logging.info(f"Final save: {len(words)} words to {json_file}.")
+        # In case there are any words left unsaved due to an early loop exit
+        if words:
+            await db.save_words_to_db(words, lang)
+            logging.info("Final save: Saved remaining words.")
+

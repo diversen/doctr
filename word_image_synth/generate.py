@@ -2,39 +2,36 @@ import json
 import logging
 import os
 import random
+import sqlite3
 import time
 import uuid
+from multiprocessing import Manager, Pool
+
+from trdg.generators import GeneratorFromStrings
 
 # import all from settings under the namespace `settings`
 import settings
-
-from multiprocessing import Pool
-from multiprocessing import Manager
-from trdg.generators import GeneratorFromStrings
 from doctr.datasets import VOCABS
-
-
-import os
-import json
-import sqlite3
-
 
 
 def init_db(output_dir_images):
     """
     Initialize the SQLite database and create the labels table if it doesn't exist.
     """
-    db_path = os.path.join(output_dir_images, 'database.db')
+    db_path = os.path.join(output_dir_images, "database.db")
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
-    c.execute('''
+    c.execute(
+        """
         CREATE TABLE IF NOT EXISTS labels (
             image_name TEXT PRIMARY KEY,
             word TEXT NOT NULL
         )
-    ''')
+    """
+    )
     conn.commit()
     conn.close()
+
 
 def save_labels_to_db(labels_dict, output_dir_images):
     """
@@ -42,14 +39,17 @@ def save_labels_to_db(labels_dict, output_dir_images):
     """
     init_db(output_dir_images)
 
-    db_path = os.path.join(output_dir_images, 'database.db')
+    db_path = os.path.join(output_dir_images, "database.db")
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     for image_name, word in labels_dict.items():
-        c.execute('''
+        c.execute(
+            """
             INSERT INTO labels (image_name, word) VALUES (?, ?)
             ON CONFLICT(image_name) DO UPDATE SET word=excluded.word;
-        ''', (image_name, word))
+        """,
+            (image_name, word),
+        )
     conn.commit()
     conn.close()
 
@@ -58,7 +58,6 @@ def generate_word(word, labels_dict, output_dir_images):
     """
     Generate an image for a single word
     """
-
     font = settings.get_font()
     text_color = settings.get_text_color()
     distorsion_type = settings.distorsion_type
@@ -120,6 +119,7 @@ def generate_images_for_batch(
     labels_dict,
     num_images_per_word,
 ):
+    """Generate images for a batch of words."""
     args = [
         (
             word,
@@ -140,6 +140,7 @@ def worker(
     output_dir_images,
     num_images_per_word,
 ):
+    """"Worker function to generate images for a single word."""
     for _ in range(num_images_per_word):
         word_cased = settings.transform_word(word)
         generate_word(word_cased, labels_dict, output_dir_images)
@@ -151,6 +152,9 @@ def generate_images_from_words(
     num_images_per_word,
     output_dir,
 ):
+    """
+    Generate images for a list of words.
+    """
     output_dir_images = os.path.join(output_dir, "images")
     os.makedirs(output_dir_images, exist_ok=True)
 
@@ -159,8 +163,10 @@ def generate_images_from_words(
 
     for i, word in enumerate(words):
 
-        labels_dict = manager.dict() 
-        logging.info(f"{i+1}/{len(words)}. Generating {num_images_per_word} images for word: {word}")
+        labels_dict = manager.dict()
+        logging.info(
+            f"{i + 1}/{len(words)}. Generating {num_images_per_word} images for word: {word}"
+        )
 
         generate_images_for_batch(
             [word], output_dir_images, labels_dict, num_images_per_word

@@ -12,12 +12,12 @@ from tensorflow import keras
 from doctr.models.preprocessor import PreProcessor
 from doctr.utils.repr import NestedObject
 
-__all__ = ["CropOrientationPredictor"]
+__all__ = ["OrientationPredictor"]
 
 
-class CropOrientationPredictor(NestedObject):
-    """Implements an object able to detect the reading direction of a text box.
-    4 possible orientations: 0, 90, 180, 270 degrees counter clockwise.
+class OrientationPredictor(NestedObject):
+    """Implements an object able to detect the reading direction of a text box or a page.
+    4 possible orientations: 0, 90, 180, 270 (-90) degrees counter clockwise.
 
     Args:
     ----
@@ -37,16 +37,22 @@ class CropOrientationPredictor(NestedObject):
 
     def __call__(
         self,
-        crops: List[Union[np.ndarray, tf.Tensor]],
-    ) -> List[int]:
+        inputs: List[Union[np.ndarray, tf.Tensor]],
+    ) -> List[Union[List[int], List[float]]]:
         # Dimension check
-        if any(crop.ndim != 3 for crop in crops):
-            raise ValueError("incorrect input shape: all crops are expected to be multi-channel 2D images.")
+        if any(input.ndim != 3 for input in inputs):
+            raise ValueError("incorrect input shape: all inputs are expected to be multi-channel 2D images.")
 
-        processed_batches = self.pre_processor(crops)
+        processed_batches = self.pre_processor(inputs)
         predicted_batches = [self.model(batch, training=False) for batch in processed_batches]
 
+        # confidence
+        probs = [tf.math.reduce_max(tf.nn.softmax(batch, axis=1), axis=1).numpy() for batch in predicted_batches]
         # Postprocess predictions
         predicted_batches = [out_batch.numpy().argmax(1) for out_batch in predicted_batches]
 
-        return [int(pred) for batch in predicted_batches for pred in batch]
+        class_idxs = [int(pred) for batch in predicted_batches for pred in batch]
+        classes = [int(self.model.cfg["classes"][idx]) for idx in class_idxs]
+        confs = [round(float(p), 2) for prob in probs for p in prob]
+
+        return [class_idxs, classes, confs]

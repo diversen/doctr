@@ -19,7 +19,8 @@ __all__ = [
     "mobilenet_v3_small_r",
     "mobilenet_v3_large",
     "mobilenet_v3_large_r",
-    "mobilenet_v3_small_orientation",
+    "mobilenet_v3_small_crop_orientation",
+    "mobilenet_v3_small_page_orientation",
 ]
 
 default_cfgs: Dict[str, Dict[str, Any]] = {
@@ -51,12 +52,19 @@ default_cfgs: Dict[str, Dict[str, Any]] = {
         "classes": list(VOCABS["french"]),
         "url": "https://doctr-static.mindee.com/models?id=v0.4.1/mobilenet_v3_small_r-1a8a3530.pt&src=0",
     },
-    "mobilenet_v3_small_orientation": {
+    "mobilenet_v3_small_crop_orientation": {
         "mean": (0.694, 0.695, 0.693),
         "std": (0.299, 0.296, 0.301),
-        "input_shape": (3, 128, 128),
-        "classes": [0, 90, 180, 270],
-        "url": "https://doctr-static.mindee.com/models?id=v0.4.1/classif_mobilenet_v3_small-24f8ff57.pt&src=0",
+        "input_shape": (3, 256, 256),
+        "classes": [0, -90, 180, 90],
+        "url": "https://doctr-static.mindee.com/models?id=v0.8.1/mobilenet_v3_small_crop_orientation-f0847a18.pt&src=0",
+    },
+    "mobilenet_v3_small_page_orientation": {
+        "mean": (0.694, 0.695, 0.693),
+        "std": (0.299, 0.296, 0.301),
+        "input_shape": (3, 512, 512),
+        "classes": [0, -90, 180, 90],
+        "url": "https://doctr-static.mindee.com/models?id=v0.8.1/mobilenet_v3_small_page_orientation-8e60325c.pt&src=0",
     },
 }
 
@@ -212,14 +220,14 @@ def mobilenet_v3_large_r(pretrained: bool = False, **kwargs: Any) -> mobilenetv3
     )
 
 
-def mobilenet_v3_small_orientation(pretrained: bool = False, **kwargs: Any) -> mobilenetv3.MobileNetV3:
+def mobilenet_v3_small_crop_orientation(pretrained: bool = False, **kwargs: Any) -> mobilenetv3.MobileNetV3:
     """MobileNetV3-Small architecture as described in
     `"Searching for MobileNetV3",
     <https://arxiv.org/pdf/1905.02244.pdf>`_.
 
     >>> import torch
-    >>> from doctr.models import mobilenet_v3_small_orientation
-    >>> model = mobilenet_v3_small_orientation(pretrained=False)
+    >>> from doctr.models import mobilenet_v3_small_crop_orientation
+    >>> model = mobilenet_v3_small_crop_orientation(pretrained=False)
     >>> input_tensor = torch.rand((1, 3, 512, 512), dtype=torch.float32)
     >>> out = model(input_tensor)
 
@@ -233,7 +241,32 @@ def mobilenet_v3_small_orientation(pretrained: bool = False, **kwargs: Any) -> m
         a torch.nn.Module
     """
     return _mobilenet_v3(
-        "mobilenet_v3_small_orientation",
+        "mobilenet_v3_small_crop_orientation",
+        pretrained,
+        ignore_keys=["classifier.3.weight", "classifier.3.bias"],
+        **kwargs,
+    )
+
+
+def mobilenet_v3_small_page_orientation(pretrained: bool = False, **kwargs: Any) -> mobilenetv3.MobileNetV3:
+    """MobileNetV3-Small architecture as described in
+    `"Searching for MobileNetV3",
+    <https://arxiv.org/pdf/1905.02244.pdf>`_.
+    >>> import torch
+    >>> from doctr.models import mobilenet_v3_small_page_orientation
+    >>> model = mobilenet_v3_small_page_orientation(pretrained=False)
+    >>> input_tensor = torch.rand((1, 3, 512, 512), dtype=torch.float32)
+    >>> out = model(input_tensor)
+    Args:
+    ----
+        pretrained: boolean, True if model is pretrained
+        **kwargs: keyword arguments of the MobileNetV3 architecture
+    Returns:
+    -------
+        a torch.nn.Module
+    """
+    return _mobilenet_v3(
+        "mobilenet_v3_small_page_orientation",
         pretrained,
         ignore_keys=["classifier.3.weight", "classifier.3.bias"],
         **kwargs,

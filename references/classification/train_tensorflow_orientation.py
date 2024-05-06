@@ -30,14 +30,17 @@ from doctr.models.utils import export_model_to_onnx
 from doctr.transforms.functional import rotated_img_tensor
 from utils import EarlyStopper, plot_recorder, plot_samples
 
-CLASSES = [0, 90, 180, 270]
+CLASSES = [0, -90, 180, 90]
 
 
 def rnd_rotate(img: tf.Tensor, target):
     angle = int(np.random.choice(CLASSES))
     idx = CLASSES.index(angle)
+    # augment the angle randomly with a probability of 0.5
+    if np.random.rand() < 0.5:
+        angle += float(np.random.choice(np.arange(-25, 25, 5)))
     # clockwise rotation
-    rotated_img = rotated_img_tensor(img, -angle, expand=False)
+    rotated_img = rotated_img_tensor(img, -angle, expand=angle not in CLASSES)
     return rotated_img, idx
 
 
@@ -147,7 +150,7 @@ def main(args):
     if not isinstance(args.workers, int):
         args.workers = min(16, mp.cpu_count())
 
-    input_size = (256, 256) if args.type == "page" else (32, 32)
+    input_size = (512, 512) if args.type == "page" else (256, 256)
 
     # AMP
     if args.amp:

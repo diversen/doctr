@@ -14,7 +14,6 @@ import multiprocessing as mp
 import time
 
 import numpy as np
-import psutil
 import tensorflow as tf
 from tensorflow.keras import mixed_precision
 from tqdm.auto import tqdm
@@ -136,8 +135,6 @@ def main(args):
     if not isinstance(args.workers, int):
         args.workers = min(16, mp.cpu_count())
 
-    system_available_memory = int(psutil.virtual_memory().available / 1024**3)
-
     # AMP
     if args.amp:
         mixed_precision.set_global_policy("mixed_float16")
@@ -200,11 +197,8 @@ def main(args):
         print("Done.")
 
     # Metrics
-    val_metric = LocalizationConfusion(
-        use_polygons=args.rotation and not args.eval_straight,
-        mask_shape=(args.input_size, args.input_size),
-        use_broadcasting=True if system_available_memory > 62 else False,
-    )
+    val_metric = LocalizationConfusion(use_polygons=args.rotation and not args.eval_straight)
+
     if args.test_only:
         print("Running evaluation")
         val_loss, recall, precision, mean_iou = evaluate(model, val_loader, batch_transforms, val_metric)
@@ -215,38 +209,58 @@ def main(args):
         return
 
     st = time.time()
+    # Augmentations
+    # Image augmentations
+    img_transforms = T.OneOf([
+        T.Compose([
+            T.RandomApply(T.ColorInversion(), 0.3),
+            T.RandomApply(T.GaussianBlur(kernel_shape=5, std=(0.1, 4)), 0.2),
+        ]),
+        T.Compose([
+            T.RandomApply(T.RandomJpegQuality(60), 0.15),
+            # T.RandomApply(T.RandomShadow(), 0.2), # Broken atm on GPU
+            T.RandomApply(T.GaussianNoise(), 0.1),
+            T.RandomApply(T.GaussianBlur(kernel_shape=5, std=(0.1, 4)), 0.3),
+            T.RandomApply(T.ToGray(num_output_channels=3), 0.15),
+        ]),
+        T.Compose([
+            T.RandomApply(T.RandomSaturation(0.3), 0.3),
+            T.RandomApply(T.RandomContrast(0.3), 0.3),
+            T.RandomApply(T.RandomBrightness(0.3), 0.3),
+        ]),
+        lambda x: x,  # Identity no transformation
+    ])
+    # Image + target augmentations
+    sample_transforms = T.SampleCompose(
+        (
+            [
+                T.RandomHorizontalFlip(0.15),
+                T.OneOf([
+                    T.RandomApply(T.RandomCrop(ratio=(0.6, 1.33)), 0.25),
+                    T.RandomResize(scale_range=(0.4, 0.9), p=0.25),
+                ]),
+                T.Resize((args.input_size, args.input_size), preserve_aspect_ratio=True, symmetric_pad=True),
+            ]
+            if not args.rotation
+            else [
+                T.RandomHorizontalFlip(0.15),
+                T.OneOf([
+                    T.RandomApply(T.RandomCrop(ratio=(0.6, 1.33)), 0.25),
+                    T.RandomResize(scale_range=(0.4, 0.9), p=0.25),
+                ]),
+                # Rotation augmentation
+                T.Resize(args.input_size, preserve_aspect_ratio=True),
+                T.RandomApply(T.RandomRotate(90, expand=True), 0.5),
+                T.Resize((args.input_size, args.input_size), preserve_aspect_ratio=True, symmetric_pad=True),
+            ]
+        )
+    )
     # Load both train and val data generators
     train_set = DetectionDataset(
         img_folder=os.path.join(args.train_path, "images"),
         label_path=os.path.join(args.train_path, "labels.json"),
-        img_transforms=T.Compose([
-            # Augmentations
-            T.RandomApply(T.ColorInversion(), 0.1),
-            T.RandomJpegQuality(60),
-            T.RandomApply(T.GaussianNoise(mean=0.1, std=0.1), 0.1),
-            T.RandomApply(T.RandomShadow(), 0.1),
-            T.RandomApply(T.GaussianBlur(kernel_shape=3, std=(0.1, 0.1)), 0.1),
-            T.RandomSaturation(0.3),
-            T.RandomContrast(0.3),
-            T.RandomBrightness(0.3),
-            T.RandomApply(T.ToGray(num_output_channels=3), 0.05),
-        ]),
-        sample_transforms=T.SampleCompose(
-            (
-                [T.Resize((args.input_size, args.input_size), preserve_aspect_ratio=True, symmetric_pad=True)]
-                if not args.rotation
-                else []
-            )
-            + (
-                [
-                    T.Resize(args.input_size, preserve_aspect_ratio=True),  # This does not pad
-                    T.RandomApply(T.RandomRotate(90, expand=True), 0.5),
-                    T.Resize((args.input_size, args.input_size), preserve_aspect_ratio=True, symmetric_pad=True),
-                ]
-                if args.rotation
-                else []
-            )
-        ),
+        img_transforms=img_transforms,
+        sample_transforms=sample_transforms,
         use_polygons=args.rotation,
     )
     train_loader = DataLoader(
